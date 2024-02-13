@@ -40,6 +40,9 @@ function log_data() {
     elif [[ "$type" == "smtpauth" ]]; then
         sh $scripts/unbanip/eximlog.sh $ip $type
 
+    elif [[ "$type" == "eximsyntax" ]]; then
+        sh $scripts/unbanip/eximsyntax.sh $ip $type
+
     elif [[ "$type" == "cpanel" ]]; then
         sh $scripts/unbanip/loginlog.sh $ip $type
 
