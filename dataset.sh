@@ -11,5 +11,5 @@ logtime=$(date +"%Y-%m")
 logdate=$(date +"%Y-%m-%d")
 time=$(date +"%F_%T")
 date=$(date +"%F")
-svrport="22"
+svrport="XX"
 sshkey="/ssh/key/path"
