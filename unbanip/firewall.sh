@@ -3,11 +3,9 @@
 source /home/sample/scripts/dataset.sh
 
 ip=$1
+type=$2
 
-function ip_unblock() {
-    search=$(csf -g $ip | tail -1 | grep "csf.deny:\|cphulk")
-
-    if [[ ! -z "$search" ]]; then
+function fw_reason() {
         echo "Reason:"
 
         log_data
@@ -15,25 +13,12 @@ function ip_unblock() {
         read -p "Remove from CSF Deny List (y/n)? " answer
 
         if [[ $answer == "y" || $answer == "Y" ]]; then
-            result=$(csf -dr $ip | grep "LOGDROPOUT")
+            sh $scripts/unbanip/fwunblock.sh $ip
 
-            if [[ ! -z "$result" ]]; then
-                echo "$(date +"%F %T") CSF Unblocked $ip" >>$svrlogs/unbanip/unblock/unban_$logtime.txt
-
-                echo "CSF IP Unblocked"
-            else
-                echo "CSF IP cannot Unblock"
-            fi
         fi
-
-    else
-        echo "CSF No record found"
-    fi
 }
 
 function log_data() {
-    type=$(echo "$search" | awk '{print $5}' | sed 's/(//;s/)//')
-
     if [[ "$type" == "imapd" || "$type" == "pop3d" ]]; then
         sh $scripts/unbanip/maillog.sh $ip $type
 
@@ -56,9 +41,9 @@ function log_data() {
         sh $scripts/unbanip/modseclog.sh $ip $type
 
     else
-        echo "Unknown type: $type"
+        echo "No logs available for this category"
 
     fi
 }
 
-ip_unblock
+fw_reason
