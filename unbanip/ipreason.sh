@@ -11,33 +11,31 @@ function check_ip() {
     if [[ $input =~ $ipv4 || $input =~ $ipv6 ]]; then
         ip=$input
 
-        ip_unblock
+        ip_reason
     else
         echo "Invalid IP"
     fi
 }
 
-function ip_unblock() {
-    search=$(csf -g $ip | tail -1 | grep "csf.deny:\|cphulk")
+function ip_reason() {
+    search=$(csf -g $ip | tail -1 | grep -v "csf.allow\|No matches found")
 
     if [[ ! -z $search ]]; then
         type=$(echo "$search" | awk '{print $1}')
 
-        if [[ "$type" == "csf.deny:" ]]; then
-            echo "Blocked by Firewall:"
-            echo "$search"
-
-            sh $scripts/unbanip/firewall.sh $ip
-
-        elif [[ "$type" == "filter" ]]; then
+        if [[ "$type" == "filter" ]]; then
             echo "Blocked by cPHulk:"
             echo "$search"
 
             sh $scripts/unbanip/cphulk.sh $ip
 
         else
-            echo "Unknown type:"
+            echo "Blocked by Firewall:"
             echo "$search"
+
+            type=$(echo "$search" | awk '{print $5}' | sed 's/(//;s/)//')
+
+            sh $scripts/unbanip/firewall.sh $ip $type
         fi
 
     else
