@@ -6,7 +6,7 @@ ip=$1
 type=$2
 
 function log_data() {
-	cat /var/log/exim_mainlog | grep "$ip" | grep "dropped: too many syntax or protocol errors" | awk '{for(i=1;i<=NF;i++) {for(j=1;j<=NF;j++) {if($i=="dropped:" && $j~/RCPT/ && $(j+1)=="TO:") print $1,$2,$3,$(i-1),$(j+2)}}}' | grep -v "127.0.0.1\|localhost" | sed 's/<//;s/>//;s/[][]//g;s/'\''//g;s/"//g;s/,//g' | awk '{gsub(/:.*/,"",$4)}1' | awk '{printf "%-19s %-17s %-13s %-22s %-50s\n","DATE: "$1,"TIME: "$2,"TYPE: "$3,"IP: "$4,"EMAIL: "$NF}' | sort | uniq -c >>$temp/$type-unban_$time.txt
+	cat /var/log/exim_mainlog | grep "$ip" | grep "dropped: too many syntax or protocol errors" | grep "RCPT TO:" | grep -v "127.0.0.1\|localhost" | awk '{ip=""; email=""; for(i=1;i<=NF;i++) {if($i=="dropped:") {ip=$(i-1); gsub(/:.*/, "", ip); gsub(/\[|\]/, "", ip);} if($i~/RCPT/ && $(i+1)=="TO:") { match($0, /"RCPT TO: <[^">]*>/); email=substr($0, RSTART+11, RLENGTH-12); gsub(/'\''/, "", email); gsub(/^ */, "", email);}} printf "%-19s %-17s %-13s %-22s %-50s\n","DATE: "$1,"TIME: "$2,"TYPE: "$3,"IP: "ip,"EMAIL: "email;}' | uniq -c >>$temp/$type-unban_$time.txt
 }
 
 function filter_log() {
