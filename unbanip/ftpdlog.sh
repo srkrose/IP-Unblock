@@ -6,7 +6,7 @@ ip=$1
 type=$2
 
 function log_data() {
-	cat /var/log/messages | grep "$ip" | grep "pure-ftpd:" | grep "Authentication failed for user" | awk '{print $1,$2,$3,$6,$NF}' | sed 's/(?@//;s/)//;s/[][]//g' | awk '{printf "%-15s %-17s %-22s %-50s\n","DATE: "$1" "$2,"TIME: "$3,"IP: "$4,"USER: "$NF}' | sort | uniq -c >>$temp/$type-unban_$time.txt
+	cat /var/log/messages | grep "$ip" | grep "pure-ftpd:" | grep "Authentication failed for user" | awk '{gsub(/\(\?@|\)/, "", $6); gsub(/\[|\]/, "", $NF); printf "%-15s %-17s %-22s %-50s\n","DATE: "$1" "$2,"TIME: "$3,"IP: "$6,"USER: "$NF}' | uniq -c >>$temp/$type-unban_$time.txt
 }
 
 function filter_log() {
