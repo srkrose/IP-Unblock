@@ -3,55 +3,35 @@
 source /home/sample/scripts/dataset.sh
 
 ip=$1
+category=$2
 
 function ch_unblock() {
-    blacklist=$(whmapi1 read_cphulk_records list_name='black' | grep "$ip")
+    if [[ "$category" == "blacklist" ]]; then
+        delist_ip
 
-    history=$(whmapi1 get_cphulk_excessive_brutes | grep -B 3 -A 3 "$ip" | awk '!seen[$0]++')
+        flush_ip
 
-    if [[ ! -z "$history" ]]; then
-        if [[ ! -z "$blacklist" ]]; then
-            delist_ip
+        if [[ "$dresult" -eq 1 && "$fresult" -eq 1 ]]; then
+            echo "$(date +"%F %T") cPHulk Delisted & Flushed $ip" >>$svrlogs/unbanip/unblock/unban_$logtime.txt
 
-            flush_ip
+            echo "cPHulk IP Delisted & Flushed"
 
-            if [[ "$dresult" -eq 1 && "$fresult" -eq 1 ]]; then
-                echo "$(date +"%F %T") cPHulk Delisted & Flushed $ip" >>$svrlogs/unbanip/unblock/unban_$logtime.txt
-
-                echo "cPHulk IP Delisted & Flushed"
-
-                add_ip
-            else
-                echo "cPHulk IP cannot Delist & Flush"
-            fi
+            add_ip
 
         else
-            flush_ip
-
-            if [[ "$fresult" -eq 1 ]]; then
-                echo "$(date +"%F %T") cPHulk Flushed $ip" >>$svrlogs/unbanip/unblock/unban_$logtime.txt
-
-                echo "cPHulk IP Flushed"
-            else
-                echo "cPHulk IP cannot Flush"
-            fi
+            echo "cPHulk IP cannot Delist & Flush"
         fi
 
     else
-        if [[ ! -z "$blacklist" ]]; then
-            delist_ip
+        flush_ip
 
-            if [[ "$dresult" -eq 1 ]]; then
-                echo "$(date +"%F %T") cPHulk Delisted $ip" >>$svrlogs/unbanip/unblock/unban_$logtime.txt
+        if [[ "$fresult" -eq 1 ]]; then
+            echo "$(date +"%F %T") cPHulk Flushed $ip" >>$svrlogs/unbanip/unblock/unban_$logtime.txt
 
-                echo "cPHulk IP Delisted"
+            echo "cPHulk IP Flushed"
 
-                add_ip
-            else
-                echo "cPHulk IP cannot Delist"
-            fi
         else
-            echo "cPHulk No records found"
+            echo "cPHulk IP cannot Flush"
         fi
     fi
 }
