@@ -27,7 +27,9 @@ function ip_reason() {
             echo "Blocked by cPHulk:"
             echo "$search"
 
-            sh $scripts/unbanip/cphulk.sh $ip
+            type="firewall"
+
+            sh $scripts/unbanip/cphulk.sh $ip $type
 
         else
             echo "Blocked by Firewall:"
@@ -39,17 +41,9 @@ function ip_reason() {
         fi
 
     else
-        search=$(whmapi1 read_cphulk_records list_name='black' | grep "$ip")
-
-        if [[ ! -z $search ]]; then
-            echo "Blacklisted by cPHulk:"
-            echo "$search"
-
-            sh $scripts/unbanip/cphulk.sh $ip
-            
-        else
-            echo "No records found"
-        fi
+        type="cphulk"
+        
+        sh $scripts/unbanip/cphulk.sh $ip $type
     fi
 }
 
