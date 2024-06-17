@@ -8,7 +8,7 @@ type=$2
 function log_data() {
 	mua=$(echo "$type" | cut -c 1-4)
 
-	cat /var/log/maillog | grep "$ip" | grep -ie "dovecot:" | grep -ie "$mua-login:" | grep -ie "auth failed" | grep -iv "Inactivity\|user=<>" | awk '{for(i=1;i<=NF;i++) {for(j=1;j<=NF;j++) {if($i~/user=/ && $j~/rip=/) {print $1,$2,$3,$6,$j,$i}}}}' | sed 's/dovecot//;s/user//;s/rip//;s/=//g;s/,//g;s/<//;s/>//' | awk '{gsub(/:/,"",$4)}1' | awk '{printf "%-15s %-17s %-19s %-22s %-50s\n","DATE: "$1" "$2,"TIME: "$3, "TYPE: "$4,"IP: "$5,"USER: "$NF}' | sort | uniq -c >>$temp/$type-unban_$time.txt
+	cat /var/log/maillog | grep "$ip" | grep -i "dovecot:" | grep -i "$mua-login:" | grep -i "auth failed" | grep -iv "Inactivity\|user=<>" | awk '{ip=""; user=""; for(i=1;i<=NF;i++) {if($i~/user=/) {match($0, /user=<[^>]*>/); user=substr($0, RSTART+6, RLENGTH-7); gsub(/^ */, "", user);} if($i~/rip=/) {ip=$i; gsub(/rip=/, "", ip); gsub(/,/, "", ip);} gsub(/:/, "", $6);} printf "%-15s %-17s %-19s %-22s %-50s\n","DATE: "$1" "$2,"TIME: "$3,"TYPE: "$6,"IP: "ip,"USER: "user;}' | uniq -c >>$temp/$type-unban_$time.txt
 }
 
 function filter_log() {
