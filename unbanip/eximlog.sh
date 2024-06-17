@@ -2,38 +2,46 @@
 
 source /home/sample/scripts/dataset.sh
 
-ip=$1
-type=$2
+ip="124.6.243.64"
 
-function log_data() {
-	cat /var/log/exim_mainlog | grep "$ip" | grep "Incorrect authentication data" | awk '{for(i=1;i<=NF;i++) {for(j=1;j<=NF;j++) {if($i==535 && $j~/set_id=/) print $1,$2,$3,$(i-1),$j}}}' | grep -v "127.0.0.1\|localhost" | sed 's/(//g;s/)//g;s/[][]//g;s/set_id=//' | awk '{gsub(/:.*/,"",$4)}1' | awk '{printf "%-19s %-17s %-22s %-22s %-50s\n","DATE: "$1,"TIME: "$2,"TYPE: "$3,"IP: "$4,"EMAIL: "$NF}' | sort | uniq -c >>$temp/$type-unban_$time.txt
-}
+function ip_unblock() {
+	search=$(csf -g $ip | tail -1 | grep -v "csf.allow\|No matches found")
 
-function filter_log() {
-	if [ -r $temp/$type-unban_$time.txt ] && [ -s $temp/$type-unban_$time.txt ]; then
-		today=$(date +"%F")
-		yesterday=$(date -d 'yesterday' +"%F")
+	if [[ ! -z "$search" ]]; then
+		type=$(echo "$search" | awk '{print $1}')
 
-		data=$(cat $temp/$type-unban_$time.txt | grep "$today")
+		if [[ "$type" == "csf.deny:" ]]; then
+			reason=$(echo "$search" | awk '{print $6,$7}')
+			dtime=$(echo "$search" | awk '{print $NF"-"$(NF-3)"-"$(NF-2)"_"$(NF-1)}')
 
-		if [[ -z "$data" ]]; then
-			data=$(cat $temp/$type-unban_$time.txt | grep "$yesterday")
-
-			if [[ ! -z "$data" ]]; then
-				echo "$data" >>$svrlogs/unbanip/firewall/$type-unban_$time.txt
-
-			else
-				echo "$type: $ip - No log records found" >>$svrlogs/unbanip/firewall/$type-unban_$time.txt
-			fi
-
+			result=$(csf -dr $ip | grep "LOGDROPOUT")
 		else
-			echo "$data" >>$svrlogs/unbanip/firewall/$type-unban_$time.txt
+			history=$(whmapi1 get_cphulk_excessive_brutes | grep -A 2 "$ip" | awk '!seen[$0]++')
+
+			reason=$(echo "$history" | grep "notes:" | awk '{print $4,$6}')
+			dtime=$(echo "$history" | grep "logintime:" | awk '{print $2"_"$3}')
+
+			result=$(whmapi1 flush_cphulk_login_history_for_ips ip=$ip | grep -i "result:" | awk '{print $2}')
 		fi
 
-		cat $svrlogs/unbanip/firewall/$type-unban_$time.txt
+		if [[ ! -z "$result" ]]; then
+			action="UNBLOCKED"
+		else
+			action="UNBLOCK FAILED"
+		fi
+
+		content=$(echo "$ip: $dtime - $reason - $action")
+
+		send_sms
 	fi
 }
 
-log_data
+function send_sms() {
+	message=$(echo "$hostname: $content")
 
-filter_log
+	#php $scripts/send_sms.php "$message" "$validation"
+
+	curl -X POST -H "Content-type: application/json" --data "{\"text\":\"$message\"}" $statusslack
+}
+
+ip_unblock
