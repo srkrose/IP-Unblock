@@ -6,7 +6,7 @@ ip=$1
 type=$2
 
 function log_data() {
-	cat /var/log/secure | grep "$ip" | grep -iv "pam_unix\|wp-toolkit\|127.0.0.1\|Bad protocol version\|sudo:" | grep "Invalid user\|Failed password for invalid user\|Did not receive identification string from\|Connection closed by" | awk '{for(i=1;i<=NF;i++) {if($i=="port") {if($6!="Did") printf "%-15s %-17s %-22s %-14s %-50s\n","DATE: "$1" "$2,"TIME: "$3,"IP: "$(i-1),"PORT: "$(i+1),"TYPE: "$6" "$7; else printf "%-15s %-17s %-22s %-14s %-50s\n","DATE: "$1" "$2,"TIME: "$3,"IP: "$(i-1),"PORT: "$(i+1),"TYPE: "$9" "$10}}}' | sort | uniq -c >>$temp/$type-unban_$time.txt
+	cat /var/log/secure | grep "$ip" | grep -iv "pam_unix\|wp-toolkit\|127.0.0.1\|Bad protocol version\|sudo:" | grep "Invalid user\|Failed password for invalid user\|Did not receive identification string from\|Connection closed by" | awk '{for(i=1;i<=NF;i++) {if($i=="port") {if($6!="Did") printf "%-15s %-17s %-22s %-14s %-50s\n","DATE: "$1" "$2,"TIME: "$3,"IP: "$(i-1),"PORT: "$(i+1),"TYPE: "$6" "$7; else printf "%-15s %-17s %-22s %-14s %-50s\n","DATE: "$1" "$2,"TIME: "$3,"IP: "$(i-1),"PORT: "$(i+1),"TYPE: "$9" "$10}}}' | uniq -c >>$temp/$type-unban_$time.txt
 }
 
 function filter_log() {
