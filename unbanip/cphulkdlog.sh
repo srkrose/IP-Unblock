@@ -6,7 +6,7 @@ ip=$1
 type=$2
 
 function log_data() {
-	cat /usr/local/cpanel/logs/cphulkd.log | grep "$ip" | awk -F'[= ]' '{for (i=0;i<NF;i++) {for (j=0;j<NF;j++) {for (k=0;k<NF;k++) {if ($i=="[Service]" && $j=="[Remote" && $(j+1)=="IP" && $k=="[Username]") print $1,$2,$(i+1),$(j+3),$(k+1)}}}}' | sed 's/[][]//g' | awk '{printf "%-19s %-17s %-21s %-22s %-50s\n","DATE: "$1,"TIME: "$2,"SERVICE: "$3,"IP: "$4,"USER: "$NF}' | sort | uniq -c >>$temp/$type-unban_$time.txt
+	cat /usr/local/cpanel/logs/cphulkd.log | grep "$ip" | awk -F'[= ]' '{service=""; ip=""; user=""; for (i=1;i<=NF;i++) {if($i=="[Service]") {service=$(i+1);} if($i=="[Remote" && $(i+1)=="IP") {ip=$(i+3);} if($i=="[Username]") {user=$(i+1);}} printf "%-19s %-17s %-21s %-22s %-50s\n","DATE: "$1,"TIME: "$2,"SERVICE: "service,"IP: "ip,"USER: "user;}' | sed 's/[][]//g' | uniq -c >>$temp/$type-unban_$time.txt
 }
 
 function filter_log() {
