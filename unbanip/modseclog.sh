@@ -6,7 +6,7 @@ ip=$1
 type=$2
 
 function log_data() {
-	cat /var/log/apache2/error_log | grep "$ip" | grep "ModSecurity:" | grep "Access denied with code" | awk '{for(i=1;i<=NF;i++) {for(j=1;j<=NF;j++) {for(k=1;k<=NF;k++) {if($i=="[id" && $j=="[msg" && $k=="[hostname") print $2,$3,$4,$5,$8,$(i+1),$(j+2),$(k+1)}}}}' | sed 's/[][]//g;s/"//g' | awk '{gsub(/\.[0-9]+$/,"",$3)}1' | awk '{if($7=="dropped") $7 = "Bot"; printf "%-20s %-17s %-22s %-14s %-15s %-50s\n","DATE: "$4"-"$1"-"$2,"TIME: "$3,"IP: "$5,"ID: "$6,"MSG: "$7,"HOST: "$NF}' | sort | uniq -c >>$temp/$type-unban_$time.txt
+	cat /var/log/apache2/error_log | grep "$ip" | grep "ModSecurity:" | grep "Access denied with code" | awk '{id=""; hostname=""; msg=""; for(i=1;i<=NF;i++) {if($i=="[msg") {msg_start=index($0,"[msg"); msg=substr($0,msg_start+5); msg_end=index(msg,"]"); msg=substr(msg,1,msg_end-1);} if($i=="[id") {id=$(i+1);} if($i=="[hostname") {hostname=$(i+1);} {gsub(/\..*/, "", $4);}} printf "%-20s %-17s %-22s %-14s %-30s %-30s\n","DATE: "$5"-"$2"-"$3,"TIME: "$4,"IP: "$8,"ID: "id,"HOST: "hostname,"MSG: "msg;}' | sed 's/[][]//g;s/"//g' | uniq -c >>$temp/$type-unban_$time.txt
 }
 
 function filter_log() {
